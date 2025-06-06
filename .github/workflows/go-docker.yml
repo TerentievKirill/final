@@ -1,4 +1,4 @@
-name: Go CI/CD
+name: Go CI/CD with Go 1.23
 
 on:
   push:
@@ -12,37 +12,34 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
-
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Run tests
-        run: go test ./...
+          go-version: '1.23'
+      - run: go vet ./...
+      - run: go test ./...
 
   docker:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Login to DockerHub
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t parcel-tracker-test .
+
+      - name: DockerHub login (only on tag)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/parcel-tracker:${{ github.ref_name }} .
-
-      - name: Push to DockerHub
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
+      - name: Push Docker image (only on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker tag parcel-tracker-test ${{ secrets.DOCKERHUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/parcel-tracker:${{ github.ref_name }}
