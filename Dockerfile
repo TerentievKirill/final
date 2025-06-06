@@ -1,19 +1,17 @@
-FROM golang:1.22 AS builder
+# Используем Go 1.23 (последняя доступная минорная версия)
+FROM golang:1.23
+
 WORKDIR /app
 
+# Копируем зависимости и скачиваем их
 COPY go.mod go.sum ./
 RUN go mod download
 
+# Копируем оставшийся код
 COPY . .
-RUN go build -o parcel-tracker .
 
-FROM debian:bookworm-slim
+# Собираем бинарник
+RUN go build -o tracker main.go parcel.go
 
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/parcel-tracker .
-COPY tracker.db .
-
-CMD ["./parcel-tracker"]
+# Запускаем бинарник
+CMD ["./tracker"]
