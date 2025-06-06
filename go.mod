@@ -1,10 +1,12 @@
 module parcel-tracker
 
-go 1.20
+go 1.23.0
+
+toolchain go1.23.5
 
 require (
 	github.com/stretchr/testify v1.10.0
-	modernc.org/sqlite v1.37.1
+	modernc.org/sqlite v1.36.0
 )
 
 require (
